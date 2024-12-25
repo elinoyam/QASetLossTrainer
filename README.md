@@ -14,6 +14,16 @@ This project implements a custom trainer for the Hugging Face library, featuring
      pip install -r requirements.txt
      ```
 
+3. **Environment**:
+    - The code was developed in Google Colab, which provides a free GPU environment, for most of the research.
+    - The code also was tested on the university's linux server, which provides a GPU environment.
+      - In the server, I ran the code using anaconda installation with jupyter notebook.
+      - helpful guides for convenient run on the server:
+        - [Anaconda installation](https://www.anaconda.com/download/success)
+        - [Running IPython/Jupyter notebook on different computer](https://danielhnyk.cz/running-ipython-notebook-different-computer/)
+        - [how-to-use-linux-screen](https://linuxize.com/post/how-to-use-linux-screen/)
+        
+
 ## Usage
 
 1. **Workflow Example**:
@@ -26,7 +36,7 @@ This project implements a custom trainer for the Hugging Face library, featuring
      - Preprocess the data using the `format_input` function in the notebook.
    - **Set Global Default Values**:
      - Run the `set_global_default_values` function to configure global variables before training.
-       I've set those as global variables to reduce the number of calls to function and of calculations, in order to improve performance.
+       I've set those as global variables to reduce the number of calls to function and of calculations, in order to improve performance, and because I need to use their values in compute_matrics and in the custom loss function and we can't pass additional arguments to those functions.
    - **Trainer Configuration**:
      - Pass the following additional keyword arguments (kwargs) to the trainer constructor (default values are defined in `defaultValues.py`):
        - `LAMBDA1`: Weight of the CE loss in the total loss.

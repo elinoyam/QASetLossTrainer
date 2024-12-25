@@ -108,9 +108,9 @@ def build_IOU_metrix(pred_split, label_split):
 
 
 def split_QAs(text,
-              QA_sep_tokens_tensor=DEFAULT_QA_SEP_TOKENS,
+              qa_sep_tokens_tensor=DEFAULT_QA_SEP_TOKENS,
               q_sep_tokens_tensor=DEFAULT_Q_SEP_TOKENS,
-              A_sep_tokens_tensor=DEFAULT_A_SEP_TOKENS):
+              a_sep_tokens_tensor=DEFAULT_A_SEP_TOKENS):
     # split the text to be list of answers.
     # each answer is a list of indexes of the tokens in the answer
     # we will split the text first by <QA> token, then by ? token and lastly by the <A> token
@@ -120,7 +120,7 @@ def split_QAs(text,
     # A_sep_tokens_tensor - tensor of indexes of the tokens that separate between answers
     # output: list of tuples, each tuple is a question and a list of answers
 
-    qa_split = split_tokenized_text(text, QA_sep_tokens_tensor)
+    qa_split = split_tokenized_text(text, qa_sep_tokens_tensor)
     questions_and_answers = []
     for qa in qa_split:
         q_split = split_tokenized_text(qa, q_sep_tokens_tensor,
@@ -129,7 +129,7 @@ def split_QAs(text,
             question, answers = q_split[0], []
         else:
             question, answers = q_split[0], q_split[1]
-        answers = split_tokenized_text(answers, A_sep_tokens_tensor)
+        answers = split_tokenized_text(answers, a_sep_tokens_tensor)
         questions_and_answers.append((question, answers))
 
     return questions_and_answers
@@ -179,10 +179,12 @@ def calculate_metrics(tp, fp, fn):
 
 
 def compute_metrics(eval_pred):
+    global DEFAULT_QA_SEP_TOKENS, DEFAULT_Q_SEP_TOKENS, DEFAULT_A_SEP_TOKENS
+
     predictions, labels = eval_pred
 
-    pred_split = [split_QAs(prediction) for prediction in predictions]  # split the predictions to questions and answers
-    label_split = [split_QAs(label) for label in labels]  # split the labels to questions and answers
+    pred_split = [split_QAs(prediction, DEFAULT_QA_SEP_TOKENS, DEFAULT_Q_SEP_TOKENS, DEFAULT_A_SEP_TOKENS) for prediction in predictions]  # split the predictions to questions and answers
+    label_split = [split_QAs(label, DEFAULT_QA_SEP_TOKENS, DEFAULT_Q_SEP_TOKENS, DEFAULT_A_SEP_TOKENS) for label in labels]  # split the labels to questions and answers
 
     total_tp, total_fp, total_fn = 0, 0, 0
     # for each example, calculate the IOU score between the predictions and the labels

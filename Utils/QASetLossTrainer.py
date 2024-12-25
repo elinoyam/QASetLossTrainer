@@ -1,14 +1,16 @@
 import torch
 from torch.nn.functional import cross_entropy as CrossEntropyLoss, pad
-from computeQASetValidationMetrics import *
+from .computeQASetValidationMetrics import *
 from transformers import Seq2SeqTrainer
-from defaultValues import *
+from .defaultValues import *
 
 
 # subclass trainer
 class QASetLossTrainer(Seq2SeqTrainer):
 
     def __init__(self, *args, **kwargs):
+        global DEFAULT_LAMBDA1, DEFAULT_LAMBDA2, DEFAULT_QA_SEP_TOKENS, DEFAULT_Q_SEP_TOKENS, DEFAULT_A_SEP_TOKENS, DEFAULT_PADDING_IDX, DEFAULT_DEVICE
+
         super().__init__(*args, **kwargs)
         # for each of the values, if exists in kwargs, assign it to the class attribute
         # else assign default value
@@ -21,9 +23,9 @@ class QASetLossTrainer(Seq2SeqTrainer):
         self.A_sep_tokens_tensor = kwargs['A_sep_tokens_tensor'] if keys.__contains__(
             'A_sep_tokens_tensor') else DEFAULT_A_SEP_TOKENS
         self.A_sep_length = len(self.A_sep_tokens_tensor)
-        self.q_sep_tokens_tensor = kwargs['Q_sep_tokens_tensor'] if keys.__contains__(
+        self.Q_sep_tokens_tensor = kwargs['Q_sep_tokens_tensor'] if keys.__contains__(
             'Q_sep_tokens_tensor') else DEFAULT_Q_SEP_TOKENS
-        self.q_sep_length = len(self.q_sep_tokens_tensor)
+        self.Q_sep_length = len(self.Q_sep_tokens_tensor)
         self.PADDING_IDX = kwargs['PADDING_IDX'] if keys.__contains__('PADDING_IDX') else DEFAULT_PADDING_IDX
         self.DEVICE = kwargs['DEVICE'] if keys.__contains__('DEVICE') else DEFAULT_DEVICE
 
@@ -43,9 +45,9 @@ class QASetLossTrainer(Seq2SeqTrainer):
         predictions = torch.max(logits, dim=-1).indices
 
         pred_split = [
-            split_QAs(prediction, self.QA_sep_tokens_tensor, self.q_sep_tokens_tensor, self.A_sep_tokens_tensor)
+            split_QAs(prediction, self.QA_sep_tokens_tensor, self.Q_sep_tokens_tensor, self.A_sep_tokens_tensor)
             for prediction in predictions]  # split the predictions to questions and answers
-        label_split = [split_QAs(label, self.QA_sep_tokens_tensor, self.q_sep_tokens_tensor, self.A_sep_tokens_tensor)
+        label_split = [split_QAs(label, self.QA_sep_tokens_tensor, self.Q_sep_tokens_tensor, self.A_sep_tokens_tensor)
                        for label in targets]  # split the labels to questions and answers
 
         # find the QA seperation indices
@@ -132,7 +134,7 @@ class QASetLossTrainer(Seq2SeqTrainer):
             values = original_values[QA_indices]
 
         # Find the question mark index
-        qm_index = find_subsequence_occurrences(values, self.q_sep_tokens_tensor)
+        qm_index = find_subsequence_occurrences(values, self.Q_sep_tokens_tensor)
         # If no question mark is found, return the full tensor as question
         if not qm_index:
             return torch.tensor(values, device=self.DEVICE, dtype=original_values.dtype), []
