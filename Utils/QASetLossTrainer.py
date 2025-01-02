@@ -8,26 +8,57 @@ from .defaultValues import *
 # subclass trainer
 class QASetLossTrainer(Seq2SeqTrainer):
 
-    def __init__(self, *args, **kwargs):
-        global DEFAULT_LAMBDA1, DEFAULT_LAMBDA2, DEFAULT_QA_SEP_TOKENS, DEFAULT_Q_SEP_TOKENS, DEFAULT_A_SEP_TOKENS, DEFAULT_PADDING_IDX, DEFAULT_DEVICE
+    def __init__(self, lambda1=DEFAULT_LAMBDA1, lambda2=DEFAULT_LAMBDA2, qa_sep=DEFAULT_QA_SEP_TOKENS,
+                 q_sep=DEFAULT_Q_SEP_TOKENS, a_sep=DEFAULT_A_SEP_TOKENS, padding_idx=DEFAULT_PADDING_IDX, use_device=DEFAULT_DEVICE, *args, **kwargs):
 
-        super().__init__(*args, **kwargs)
-        # for each of the values, if exists in kwargs, assign it to the class attribute
         # else assign default value
-        keys = kwargs.keys()
-        self.LAMBDA1 = kwargs['lambda1'] if keys.__contains__('lambda1') else DEFAULT_LAMBDA1
-        self.LAMBDA2 = kwargs['lambda2'] if keys.__contains__('lambda2') else DEFAULT_LAMBDA2
-        self.QA_sep_tokens_tensor = kwargs['QA_sep_tokens_tensor'] if keys.__contains__(
-            'QA_sep_tokens_tensor') else DEFAULT_QA_SEP_TOKENS
+        if 'lambda1' in kwargs:
+            self.LAMBDA1 = kwargs['lambda1']
+        else:
+            self.LAMBDA1 = lambda1 if lambda1 is not None else DEFAULT_LAMBDA1
+
+        if 'lambda2' in kwargs:
+            self.LAMBDA2 = kwargs['lambda2']
+            del kwargs['lambda2']
+        else:
+            self.LAMBDA2 = lambda2 if lambda2 is not None else DEFAULT_LAMBDA2
+
+        if 'qa_sep' in kwargs:
+            self.QA_sep_tokens_tensor = kwargs['qa_sep']
+            del kwargs['qa_sep']
+        else:
+            self.QA_sep_tokens_tensor = qa_sep if qa_sep is not None else DEFAULT_QA_SEP_TOKENS
+
         self.QA_sep_length = len(self.QA_sep_tokens_tensor)
-        self.A_sep_tokens_tensor = kwargs['A_sep_tokens_tensor'] if keys.__contains__(
-            'A_sep_tokens_tensor') else DEFAULT_A_SEP_TOKENS
+
+        if 'a_sep' in kwargs:
+            self.A_sep_tokens_tensor = kwargs['a_sep']
+            del kwargs['a_sep']
+        else:
+            self.A_sep_tokens_tensor = a_sep if a_sep is not None else DEFAULT_A_SEP_TOKENS
+
         self.A_sep_length = len(self.A_sep_tokens_tensor)
-        self.Q_sep_tokens_tensor = kwargs['Q_sep_tokens_tensor'] if keys.__contains__(
-            'Q_sep_tokens_tensor') else DEFAULT_Q_SEP_TOKENS
+
+        if 'q_sep' in kwargs:
+            self.Q_sep_tokens_tensor = kwargs['q_sep']
+            del kwargs['q_sep']
+        else:
+            self.Q_sep_tokens_tensor = q_sep if qa_sep is not None else DEFAULT_Q_SEP_TOKENS
+
         self.Q_sep_length = len(self.Q_sep_tokens_tensor)
-        self.PADDING_IDX = kwargs['PADDING_IDX'] if keys.__contains__('PADDING_IDX') else DEFAULT_PADDING_IDX
-        self.DEVICE = kwargs['DEVICE'] if keys.__contains__('DEVICE') else DEFAULT_DEVICE
+
+        if 'padding_idx' in kwargs:
+            self.PADDING_IDX = kwargs['padding_idx']
+            del kwargs['padding_idx']
+        else:
+            self.PADDING_IDX = padding_idx if padding_idx is not None else DEFAULT_PADDING_IDX
+
+        if 'use_device' in kwargs:
+            self.DEVICE = kwargs['use_device']
+            del kwargs['use_device']
+        else:
+            self.DEVICE = use_device if use_device is not None else DEFAULT_DEVICE
+        super().__init__(*args, **kwargs)
 
     def compute_loss(self, model, inputs, num_items_in_batch=16, return_outputs=False):
         labels = inputs.pop("labels")
@@ -103,16 +134,16 @@ class QASetLossTrainer(Seq2SeqTrainer):
                                           value=self.PADDING_IDX))
                     gold_stack.append(
                         torch.full((size_to_pad,), self.PADDING_IDX, device=self.DEVICE,
-                                   dtype=pred_ans_ind_to_qa[r].dtype))
+                                   dtype=torch.int64))
                 elif c in label_ans_ind_to_qa:
                     pred_stack.append(torch.full((size_to_pad, vocab_size), self.PADDING_IDX, device=self.DEVICE,
-                                                 dtype=label_ans_ind_to_qa[c].dtype))
+                                                 dtype=torch.float))
                     gold_stack.append(
                         pad(label_ans_ind_to_qa[c], (0, size_to_pad - len(label_ans_ind_to_qa[c])),
                             value=self.PADDING_IDX))
 
-        gold_stack = torch.stack(gold_stack).type(torch.LongTensor).to(self.DEVICE)
-        pred_stack = torch.stack(pred_stack).to(self.DEVICE)
+        gold_stack = torch.stack(gold_stack).type(torch.LongTensor).to(self.DEVICE) if len(gold_stack) > 0 else torch.tensor([], device=self.DEVICE, dtype=torch.int64)
+        pred_stack = torch.stack(pred_stack).to(self.DEVICE) if len(pred_stack) > 0 else torch.tensor([], device=self.DEVICE, dtype=torch.float)
 
         loss = CrossEntropyLoss(pred_stack.view(-1, vocab_size), gold_stack.view(-1))
 

@@ -38,14 +38,14 @@ This project implements a custom trainer for the Hugging Face library, featuring
      - Run the `set_global_default_values` function to configure global variables before training.
        I've set those as global variables to reduce the number of calls to function and of calculations, in order to improve performance, and because I need to use their values in compute_matrics and in the custom loss function and we can't pass additional arguments to those functions.
    - **Trainer Configuration**:
-     - Pass the following additional keyword arguments (kwargs) to the trainer constructor (default values are defined in `defaultValues.py`):
-       - `LAMBDA1`: Weight of the CE loss in the total loss.
-       - `LAMBDA2`: Weight of the custom loss in the total loss.
-       - `QA_sep_tokens_tensor`: Tensor representing the tokens that separate different QAs in the input (already on CUDA if available).
-       - `q_sep_tokens_tensor`: Tensor representing the tokens that separate the question from the answers in the input (already on CUDA if available).
-       - `A_sep_tokens_tensor`: Tensor representing the tokens that separate different answers of a question (already on CUDA if available).
-       - `DEVICE`: The device to run the model on (e.g., CUDA or CPU).
-       - `PADDING_IDX`: The index of the padding token in the tokenizer.
+     - Pass the following additional parameters to the trainer constructor (default values are defined in `defaultValues.py`):
+       - `lambda1`: Weight of the CE loss in the total loss.
+       - `lambda2`: Weight of the custom loss in the total loss.
+       - `qa_sep`: Tensor representing the tokens that separate different QAs in the input (already on CUDA if available).
+       - `q_sep`: Tensor representing the tokens that separate the question from the answers in the input (already on CUDA if available).
+       - `a_sep`: Tensor representing the tokens that separate different answers of a question (already on CUDA if available).
+       - `padding_idx`: The index of the padding token in the tokenizer.
+       - `use_device`: The device to run the model on (e.g., CUDA or CPU).
    - **Training**:
      - Train the model using the custom trainer.
    - **Evaluation**:
